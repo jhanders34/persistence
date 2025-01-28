@@ -20,8 +20,6 @@ package jakarta.persistence.spi;
 import java.lang.ref.ReferenceQueue;
 import java.lang.ref.SoftReference;
 import java.lang.ref.WeakReference;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.HashMap;
@@ -97,7 +95,7 @@ public class PersistenceProviderResolverHolder {
             // information from the cache.
             processQueue();
             
-            ClassLoader loader = getContextClassLoader();
+            ClassLoader loader = Thread.currentThread().getContextClassLoader();
             CacheKey cacheKey = new CacheKey(loader);
             PersistenceProviderReference providersReferent = this.providers.get(cacheKey);
             List<PersistenceProvider> loadedProviders = null;
@@ -144,22 +142,6 @@ public class PersistenceProviderResolverHolder {
             while ((ref = (CacheKeyReference) referenceQueue.poll()) != null) {
                 providers.remove(ref.getCacheKey());
             }            
-        }
-
-        /**
-         * Wraps {@code Thread.currentThread().getContextClassLoader()} into a
-         * doPrivileged block if security manager is present
-         */
-        private static ClassLoader getContextClassLoader() {
-            if (System.getSecurityManager() == null) {
-                return Thread.currentThread().getContextClassLoader();
-            } else {
-                return AccessController.doPrivileged(new PrivilegedAction<ClassLoader>() {
-                    public ClassLoader run() {
-                        return Thread.currentThread().getContextClassLoader();
-                    }
-                });
-            }
         }
 
         private static final String LOGGER_SUBSYSTEM = "jakarta.persistence.spi";
